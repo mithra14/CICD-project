@@ -18,7 +18,7 @@ phases:
       - IMAGE_TAG=${COMMIT_HASH:=latest}
       - echo Updating kubeconfig...
       - aws eks get-cluster-auth --name my-eks-cluster --region us-west-2
-      - aws eks update-kubeconfig --name my-eks-cluster
+      - aws eks update-kubeconfig --name my-eks-cluster --region us-west-2
       - cat $HOME/.kube/config
       - echo "KUBECONFIG is set to $KUBECONFIG"
       - kubectl config view --raw
