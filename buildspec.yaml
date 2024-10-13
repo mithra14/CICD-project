@@ -12,7 +12,8 @@ phases:
       - mv ./kubectl /usr/local/bin/kubectl
       - kubectl version --client
       - echo Installing jq
-      - apt-get update && apt-get install -y jq
+      - yum update -y
+      - yum install -y jq
 
   pre_build:
     commands:
