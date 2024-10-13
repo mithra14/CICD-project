@@ -24,6 +24,7 @@ phases:
       - IMAGE_TAG=${COMMIT_HASH:=latest}
       - echo Updating kubeconfig...
       - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_DEFAULT_REGION
+      - kubectl get nodes
 
   build:
     commands:
