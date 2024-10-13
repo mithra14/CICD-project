@@ -1,43 +1,26 @@
 version: 0.2
 
-env:
-  shell: bash
-
 phases:
   install:
     commands:
-      - echo Installing kubectl
+      - echo Installing dependencies
+      - yum update -y
+      - yum install -y jq
       - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
       - chmod +x kubectl
       - mv ./kubectl /usr/local/bin/kubectl
-      - kubectl version --client
-      - echo Installing jq
-      - yum update -y
-      - yum install -y jq
 
   pre_build:
     commands:
       - echo Assuming IAM Role for EKS access
       - ASSUMED_ROLE=$(aws sts assume-role --role-arn $EKS_ROLE_ARN --role-session-name codebuild-eks-session --duration-seconds 900)
-      - export AWS_ACCESS_KEY_ID="$(echo ${ASSUMED_ROLE} | jq -r '.Credentials.AccessKeyId')"
-      - export AWS_SECRET_ACCESS_KEY="$(echo ${ASSUMED_ROLE} | jq -r '.Credentials.SecretAccessKey')"
-      - export AWS_SESSION_TOKEN="$(echo ${ASSUMED_ROLE} | jq -r '.Credentials.SessionToken')"
-      - echo Logging in to Amazon ECR...
+      - export AWS_ACCESS_KEY_ID=$(echo $ASSUMED_ROLE | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $ASSUMED_ROLE | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $ASSUMED_ROLE | jq -r .Credentials.SessionToken)
+      - echo Updating kubeconfig
+      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_DEFAULT_REGION
+      - echo Logging in to Amazon ECR
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - echo Updating kubeconfig...
-      - aws eks get-token --cluster-name my-eks-cluster > token.txt
-      - aws eks update-kubeconfig --name my-eks-cluster --region us-west-2
-      - sed -i.bak -e 's/args: null/args: ["--token-file","\/root\/token.txt"]/' kubeconfig
-      - export KUBECONFIG=./kubeconfig
-      - echo "KUBECONFIG contents:"
-      - cat $KUBECONFIG
-      - echo "Current kubectl context:"
-      - kubectl config current-context
-      - echo "All kubectl contexts:"
-      - kubectl config get-contexts
 
   build:
     commands:
@@ -53,12 +36,7 @@ phases:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - docker push $REPOSITORY_URI:latest
       - echo Deploying to EKS...
-      - echo "Cluster info:"
-      - kubectl cluster-info
-      - echo "Attempting to get nodes:"
       - kubectl get nodes
-      - echo "Attempting to get pods:"
-      - kubectl get pods -A
       - kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$REPOSITORY_URI:$IMAGE_TAG
       - kubectl rollout status deployment/$DEPLOYMENT_NAME
 
