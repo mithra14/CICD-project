@@ -6,7 +6,7 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - echo "IMAGE_REPO_NAME=${IMAGE_REPO_NAME}"
-      - echo "IMAGE_TAG=${IMAGE_TAG}"
+      - echo "IMAGE_TAG=${IMAGE_TAG:-latest}"
       - echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}"
       - echo "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}"
       - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
@@ -15,11 +15,11 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-      - docker tag $REPOSITORY_URI:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+      - docker build -t $REPOSITORY_URI:${IMAGE_TAG:-latest} .
+      - echo "Docker build completed"
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
       - docker images
-      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - docker push $REPOSITORY_URI:${IMAGE_TAG:-latest}
