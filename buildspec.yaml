@@ -1,20 +1,13 @@
 version: 0.2
 
-env:
-  variables:
-    KUBECONFIG: /root/.kube/config
-
 phases:
   install:
     commands:
       - echo Installing kubectl
-      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
-      - chmod +x ./kubectl
+      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
       - mv ./kubectl /usr/local/bin/kubectl
-      - echo Installing aws-iam-authenticator
-      - curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
-      - chmod +x ./aws-iam-authenticator
-      - mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+      - kubectl version --client
 
   pre_build:
     commands:
@@ -26,6 +19,8 @@ phases:
       - echo Updating kubeconfig...
       - aws eks get-token --cluster-name $EKS_CLUSTER_NAME | kubectl apply -f -
       - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_DEFAULT_REGION
+      - kubectl config view --raw > $HOME/.kube/config
+      - export KUBECONFIG=$HOME/.kube/config
 
   build:
     commands:
@@ -41,6 +36,7 @@ phases:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - docker push $REPOSITORY_URI:latest
       - echo Deploying to EKS...
+      - kubectl get nodes
       - kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$REPOSITORY_URI:$IMAGE_TAG
       - kubectl rollout status deployment/$DEPLOYMENT_NAME
 
