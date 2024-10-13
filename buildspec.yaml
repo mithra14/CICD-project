@@ -1,23 +1,48 @@
 version: 0.2
 
+env:
+  variables:
+    KUBECONFIG: /root/.kube/config
+
 phases:
+  install:
+    commands:
+      - echo Installing kubectl
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin/kubectl
+      - echo Installing aws-iam-authenticator
+      - curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+      - chmod +x ./aws-iam-authenticator
+      - mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
-      - echo "REPOSITORY_URI=${REPOSITORY_URI}"
-      - echo "Listing current directory contents:"
-      - ls -la
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - echo Updating kubeconfig...
+      - aws eks get-token --cluster-name $EKS_CLUSTER_NAME | kubectl apply -f -
+      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_DEFAULT_REGION
+
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker build -t $REPOSITORY_URI:${IMAGE_TAG:-latest} .
-      - docker tag $REPOSITORY_URI:${IMAGE_TAG:-latest} $REPOSITORY_URI:${IMAGE_TAG:-latest}
+      - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+      - docker tag $REPOSITORY_URI:$IMAGE_TAG $REPOSITORY_URI:latest
+
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker images
-      - docker push $REPOSITORY_URI:${IMAGE_TAG:-latest}
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - docker push $REPOSITORY_URI:latest
+      - echo Deploying to EKS...
+      - kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$REPOSITORY_URI:$IMAGE_TAG
+      - kubectl rollout status deployment/$DEPLOYMENT_NAME
+
+artifacts:
+  files: []
