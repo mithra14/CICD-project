@@ -28,6 +28,7 @@ phases:
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
       - echo Updating kubeconfig...
+      - aws eks get-token --cluster-name $EKS_CLUSTER_NAME | kubectl apply -f -
       - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_DEFAULT_REGION
       - echo "KUBECONFIG contents:"
       - cat ~/.kube/config
