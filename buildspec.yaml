@@ -17,9 +17,11 @@ phases:
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
       - echo Updating kubeconfig...
+      - aws eks get-cluster-auth --name $EKS_CLUSTER_NAME --region $AWS_DEFAULT_REGION
       - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_DEFAULT_REGION
-      - kubectl config view --raw > $HOME/.kube/config
-      - export KUBECONFIG=$HOME/.kube/config
+      - cat $HOME/.kube/config
+      - echo "KUBECONFIG is set to $KUBECONFIG"
+      - kubectl config view --raw
 
   build:
     commands:
@@ -35,7 +37,9 @@ phases:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - docker push $REPOSITORY_URI:latest
       - echo Deploying to EKS...
-      - kubectl get nodes
+      - kubectl config get-contexts
+      - kubectl cluster-info
+      - kubectl get nodes -v=6
       - kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$REPOSITORY_URI:$IMAGE_TAG
       - kubectl rollout status deployment/$DEPLOYMENT_NAME
 
