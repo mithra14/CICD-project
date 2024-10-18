@@ -1,21 +1,11 @@
-# Use an official Python runtime as the base image
-FROM python:3.9-slim
+# Use the official Nginx image as the base
+FROM nginx:alpine
 
-# Set the working directory in the container
-WORKDIR /app
+# Copy a custom index.html file to the default Nginx public folder
+COPY index.html /usr/share/nginx/html/
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Expose port 80
+EXPOSE 80
 
-# Install the required packages
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Make port 5000 available to the world outside this container
-EXPOSE 5000
-
-# Define environment variable
-ENV FLASK_APP=app.py
-ENV FLASK_RUN_HOST=0.0.0.0
-
-# Run the application
-CMD ["flask", "run"]
+# Start Nginx when the container launches
+CMD ["nginx", "-g", "daemon off;"]
