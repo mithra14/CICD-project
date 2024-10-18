@@ -2,41 +2,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: myapp-deployment
+  name: my-app
   labels:
-    app: myapp
+    app: my-app
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: myapp
+      app: my-app
   template:
     metadata:
       labels:
-        app: myapp
+        app: my-app
     spec:
       containers:
-      - name: myapp
-        image: 381492168307.dkr.ecr.us-west-2.amazonaws.com/myapprepo:70de2b0
+      - name: my-app
+        image: 381492168307.dkr.ecr.us-west-2.amazonaws.com/myapprepo:db4daaa
         ports:
-        - containerPort: 8080
-        resources:
-          limits:
-            cpu: 500m
-            memory: 512Mi
-          requests:
-            cpu: 250m
-            memory: 256Mi
+        - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: myapp-service
+  name: my-app-service
 spec:
   selector:
-    app: myapp
+    app: my-app
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 8080
+      targetPort: 80
   type: LoadBalancer
