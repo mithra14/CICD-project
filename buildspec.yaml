@@ -13,7 +13,7 @@ phases:
   pre_build:
     commands:
       - echo Assuming IAM Role for EKS access
-      - TEMP_ROLE=$(aws sts assume-role --role-arn arn:aws:iam::381492168307:role/eks-access-role1 --role-session-name codebuild-eks-session --duration-seconds 900)
+      - TEMP_ROLE=$(aws sts assume-role --role-arn arn:aws:iam::381492168307:role/eks-access-role --role-session-name codebuild-eks-session --duration-seconds 900)
       - export AWS_ACCESS_KEY_ID=$(echo $TEMP_ROLE | jq -r .Credentials.AccessKeyId)
       - export AWS_SECRET_ACCESS_KEY=$(echo $TEMP_ROLE | jq -r .Credentials.SecretAccessKey)
       - export AWS_SESSION_TOKEN=$(echo $TEMP_ROLE | jq -r .Credentials.SessionToken)
