@@ -9,7 +9,8 @@ phases:
       - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
       - chmod +x ./kubectl
       - mv ./kubectl /usr/local/bin/kubectl
-      - docker login
+      - echo Logging in to Docker Hub...
+      - echo 'Chennai14$' | docker login -u mithra1492 --password-stdin
 
   pre_build:
     commands:
