@@ -17,9 +17,9 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY_NAME}:${IMAGE_TAG}
+        image: 381492168307.dkr.ecr.us-west-2.amazonaws.com/myapprepo:70de2b0
         ports:
-        - containerPort: 3000
+        - containerPort: 8080
         resources:
           limits:
             cpu: 500m
@@ -38,5 +38,5 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 3000
+      targetPort: 8080
   type: LoadBalancer
