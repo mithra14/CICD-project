@@ -10,7 +10,6 @@ phases:
       - chmod +x ./kubectl
       - mv ./kubectl /usr/local/bin/kubectl
       - echo Logging in to Docker Hub...
-      - echo 'Chennai14$' | docker login -u mithra1492 --password-stdin
 
   pre_build:
     commands:
